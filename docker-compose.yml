@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  html-host:
+    build: .
+    ports:
+      - "5000:5000"
+      - "8080:8080"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./config:/app/config
+    environment:
+      - FLASK_ENV=production
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - html-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.html-host.rule=Host(`html-host.local`)"
+      - "traefik.http.services.html-host.loadbalancer.server.port=5000"
+
+  traefik:
+    image: traefik:v2.9
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8081:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - html-network
+
+networks:
+  html-network:
+    driver: bridge
+
+volumes:
+  uploads:
+  config:

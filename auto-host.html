@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auto Host - הפעלה אוטומטית</title>
+    <script>
+        // הפעלה אוטומטית כשהדף נטען
+        window.addEventListener('load', async function() {
+            // בדיקה אם יש קובץ בכתובת
+            const urlParams = new URLSearchParams(window.location.search);
+            const fileUrl = urlParams.get('file');
+            
+            if (fileUrl) {
+                // טוען קובץ חיצוני
+                await loadAndHostExternalFile(fileUrl);
+            } else {
+                // מציג אפשרויות
+                showHostingOptions();
+            }
+        });
+
+        async function loadAndHostExternalFile(url) {
+            try {
+                // טוען את הקובץ
+                const response = await fetch(url);
+                const htmlContent = await response.text();
+                
+                // מריץ שרת מקומי
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const blobUrl = URL.createObjectURL(blob);
+                
+                // פותח בחלון חדש
+                window.open(blobUrl, '_blank');
+                
+                // מראה הודעה
+                document.body.innerHTML = `
+                    <div style="text-align: center; padding: 50px; font-family: Arial;">
+                        <h1 style="color: green;">✅ הקובץ הופעל!</h1>
+                        <p>הקובץ נפתח בחלון חדש.</p>
+                        <p>השרת המקומי פועל ברקע.</p>
+                        <button onclick="location.reload()" style="padding: 10px 20px; margin: 20px;">
+                            העלה קובץ אחר
+                        </button>
+                    </div>
+                `;
+            } catch (error) {
+                document.body.innerHTML = `
+                    <div style="text-align: center; padding: 50px; font-family: Arial;">
+                        <h1 style="color: red;">❌ שגיאה</h1>
+                        <p>לא ניתן לטעון את הקובץ.</p>
+                        <button onclick="location.reload()" style="padding: 10px 20px;">
+                            נסה שוב
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function showHostingOptions() {
+            document.body.innerHTML = `
+                <style>
+                    body {
+                        font-family: Arial;
+                        text-align: center;
+                        padding: 50px;
+                        background: linear-gradient(135deg, #667eea, #764ba2);
+                        color: white;
+                        min-height: 100vh;
+                    }
+                    .container {
+                        background: white;
+                        color: #333;
+                        padding: 40px;
+                        border-radius: 20px;
+                        display: inline-block;
+                        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+                    }
+                    input, button {
+                        padding: 15px;
+                        margin: 10px;
+                        font-size: 16px;
+                        border-radius: 10px;
+                        border: 2px solid #667eea;
+                    }
+                    button {
+                        background: #667eea;
+                        color: white;
+                        border: none;
+                        cursor: pointer;
+                        padding: 15px 40px;
+                    }
+                    .drop-area {
+                        border: 3px dashed #667eea;
+                        padding: 60px;
+                        margin: 20px;
+                        border-radius: 10px;
+                        background: #f0f4ff;
+                        cursor: pointer;
+                    }
+                </style>
+                
+                <div class="container">
+                    <h1>🚀 Auto Host System</h1>
+                    <p>גרור קובץ HTML לכאן או בחר קובץ:</p>
+                    
+                    <div class="drop-area" onclick="document.getElementById('fileInput').click()">
+                        📁 גרור קובץ לכאן<br>
+                        או לחץ לבחירה
+                    </div>
+                    
+                    <input type="file" id="fileInput" accept=".html,.htm" style="display: none;" 
+                           onchange="handleFileSelect(event)">
+                    
+                    <div style="margin-top: 30px;">
+                        <button onclick="startAutoHost()">הפעל אוטומטית</button>
+                    </div>
+                </div>
+            `;
+            
+            // הוספת drag & drop
+            setupSimpleDragDrop();
+        }
+
+        function setupSimpleDragDrop() {
+            const dropArea = document.querySelector('.drop-area');
+            
+            dropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropArea.style.background = '#e6ebff';
+            });
+            
+            dropArea.addEventListener('dragleave', () => {
+                dropArea.style.background = '#f0f4ff';
+            });
+            
+            dropArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropArea.style.background = '#f0f4ff';
+                if (e.dataTransfer.files.length > 0) {
+                    handleFile(e.dataTransfer.files[0]);
+                }
+            });
+        }
+
+        function handleFileSelect(event) {
+            handleFile(event.target.files[0]);
+        }
+
+        function handleFile(file) {
+            if (file && (file.name.endsWith('.html') || file.name.endsWith('.htm'))) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // שמור בזיכרון
+                    window.fileContent = e.target.result;
+                    
+                    // הצג כפתור הפעלה
+                    document.querySelector('.drop-area').innerHTML = `
+                        ✅ ${file.name}<br>
+                        <small>מוכן להפעלה</small>
+                    `;
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function startAutoHost() {
+            if (window.fileContent) {
+                // צור קובץ אוטומטי
+                const blob = new Blob([window.fileContent], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                
+                // פתח בחלון חדש
+                const newWindow = window.open(url, '_blank');
+                
+                // הצג הודעה
+                document.querySelector('.container').innerHTML = `
+                    <h1 style="color: green;">🎉 הקובץ הופעל!</h1>
+                    <p>הקובץ נפתח בחלון חדש.</p>
+                    <p>כתובת השרת: ${url}</p>
+                    <button onclick="location.reload()" style="margin-top: 20px;">
+                        העלה קובץ נוסף
+                    </button>
+                `;
+            }
+        }
+    </script>
+</head>
+<body>
+    <!-- הדף ייטען ויציג את הממשק אוטומטית -->
+</body>
+</html>

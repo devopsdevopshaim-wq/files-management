@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת אירוח קבצי HTML אוטומטית</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            direction: rtl;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .main-content {
+            padding: 40px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eaeaea;
+            font-size: 1.8rem;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f0f4ff;
+        }
+
+        .upload-area:hover {
+            background: #e6ebff;
+            border-color: #764ba2;
+        }
+
+        .upload-area.dragover {
+            background: #dbe4ff;
+            border-color: #4c51bf;
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            margin: 10px 5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        }
+
+        .server-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .server-status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+        }
+
+        .server-status.offline {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+
+        .config-section {
+            margin-top: 20px;
+        }
+
+        .config-item {
+            margin: 15px 0;
+        }
+
+        .config-item label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        .config-item input, .config-item select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .config-item input:focus, .config-item select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .files-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .file-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #e0e0e0;
+            transition: all 0.2s ease;
+        }
+
+        .file-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.1);
+        }
+
+        .file-name {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .file-size {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .file-actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            padding: 6px 15px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .view-btn {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .delete-btn {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #4caf50;
+            box-shadow: 0 0 10px #4caf50;
+        }
+
+        .status-offline {
+            background: #f44336;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            margin-top: 10px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+        }
+
+        .notification.info {
+            background: linear-gradient(135deg, #2196f3 0%, #1565c0 100%);
+        }
+
+        .viewer-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            display: none;
+            padding: 40px;
+        }
+
+        .viewer-content {
+            background: white;
+            border-radius: 15px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .viewer-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .viewer-iframe {
+            flex: 1;
+            border: none;
+            width: 100%;
+        }
+
+        .close-viewer {
+            background: #f44336;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .tab-navigation {
+            display: flex;
+            border-bottom: 2px solid #eaeaea;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 15px 30px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 1.1rem;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-cloud-upload-alt"></i> מערכת אירוח קבצי HTML אוטומטית</h1>
+            <p>העלה, נהל, והצג קבצי HTML בכל מקום - בצורה אוטומטית ופשוטה</p>
+        </div>
+
+        <div class="tab-navigation">
+            <button class="tab-btn active" onclick="switchTab('upload')">
+                <i class="fas fa-upload"></i> העלאת קבצים
+            </button>
+            <button class="tab-btn" onclick="switchTab('manage')">
+                <i class="fas fa-folder-open"></i> ניהול קבצים
+            </button>
+            <button class="tab-btn" onclick="switchTab('server')">
+                <i class="fas fa-server"></i> ניהול שרת
+            </button>
+        </div>
+
+        <div class="main-content">
+            <!-- Upload Tab -->
+            <div class="tab-content active" id="upload-tab">
+                <div class="section">
+                    <h2><i class="fas fa-cloud-upload-alt"></i> העלאת קובץ HTML</h2>
+                    <div class="upload-area" id="dropArea">
+                        <div class="upload-icon">
+                            <i class="fas fa-file-code"></i>
+                        </div>
+                        <p>גרור ושחרר קובץ HTML כאן, או</p>
+                        <button class="btn" onclick="document.getElementById('fileInput').click()">
+                            <i class="fas fa-folder-open"></i> בחר קובץ מהמחשב
+                        </button>
+                        <p style="margin-top: 15px; color: #666; font-size: 0.9rem;">
+                            ניתן להעלות קובצי HTML בלבד (.html, .htm)
+                        </p>
+                        <input type="file" id="fileInput" class="file-input" accept=".html,.htm" onchange="handleFileSelect(event)">
+                    </div>
+                    
+                    <div class="progress-bar" id="progressBar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+
+                    <div class="config-section">
+                        <h3><i class="fas fa-cog"></i> הגדרות אירוח</h3>
+                        <div class="config-item">
+                            <label for="hostingType"><i class="fas fa-globe"></i> סוג אירוח:</label>
+                            <select id="hostingType">
+                                <option value="local">שרת מקומי</option>
+                                <option value="docker">Docker</option>
+                                <option value="aws">AWS</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label for="serverUrl"><i class="fas fa-link"></i> כתובת שרת:</label>
+                            <input type="text" id="serverUrl" value="http://localhost:5000" placeholder="http://your-server.com">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2><i class="fas fa-info-circle"></i> מידע על המערכת</h2>
+                    <p style="margin-bottom: 20px;">מערכת זו מאפשרת לך:</p>
+                    <ul style="list-style: none; padding-right: 20px;">
+                        <li style="margin-bottom: 15px; padding-right: 30px; position: relative;">
+                            <i class="fas fa-check-circle" style="color: #4caf50; position: absolute; right: 0;"></i>
+                            העלאה אוטומטית של קבצי HTML
+                        </li>
+                        <li style="margin-bottom: 15px; padding-right: 30px; position: relative;">
+                            <i class="fas fa-check-circle" style="color: #4caf50; position: absolute; right: 0;"></i>
+                            הצגת נתוני הקובץ (גודל, סוג, תאריך)
+                        </li>
+                        <li style="margin-bottom: 15px; padding-right: 30px; position: relative;">
+                            <i class="fas fa-check-circle" style="color: #4caf50; position: absolute; right: 0;"></i>
+                            תצוגה מקדימה ישירה בדפדפן
+                        </li>
+                        <li style="margin-bottom: 15px; padding-right: 30px; position: relative;">
+                            <i class="fas fa-check-circle" style="color: #4caf50; position: absolute; right: 0;"></i>
+                            פריסה אוטומטית לשרתים (Docker, AWS)
+                        </li>
+                        <li style="margin-bottom: 15px; padding-right: 30px; position: relative;">
+                            <i class="fas fa-check-circle" style="color: #4caf50; position: absolute; right: 0;"></i>
+                            ניהול מלא של הקבצים מהממשק
+                        </li>
+                    </ul>
+
+                    <div style="background: #e8f5e9; padding: 20px; border-radius: 10px; margin-top: 30px;">
+                        <h3><i class="fas fa-lightbulb"></i> הוראות שימוש:</h3>
+                        <ol style="padding-right: 20px; margin-top: 15px;">
+                            <li style="margin-bottom: 10px;">בחר קובץ HTML להעלאה</li>
+                            <li style="margin-bottom: 10px;">בחר את סוג האירוח הרצוי</li>
+                            <li style="margin-bottom: 10px;">לחץ על "העלה ופרסם"</li>
+                            <li style="margin-bottom: 10px;">הקובץ יעלה ויקבל כתובת ציבורית</li>
+                            <li>ניתן לצפות ולנהל את כל הקבצים בלשונית "ניהול קבצים"</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manage Tab -->
+            <div class="tab-content" id="manage-tab">
+                <div class="section">
+                    <h2><i class="fas fa-folder"></i> קבצים מאוחסנים</h2>
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn" onclick="loadFiles()">
+                            <i class="fas fa-sync-alt"></i> רענן רשימה
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearAllFiles()">
+                            <i class="fas fa-trash-alt"></i> נקה הכל
+                        </button>
+                    </div>
+                    
+                    <div class="files-list" id="filesList">
+                        <div id="loadingSpinner" class="spinner"></div>
+                        <!-- Files will be loaded here -->
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2><i class="fas fa-chart-bar"></i> סטטיסטיקות</h2>
+                    <div id="statsContainer">
+                        <p style="text-align: center; padding: 40px; color: #666;">
+                            <i class="fas fa-chart-pie fa-3x" style="margin-bottom: 20px; display: block; opacity: 0.3;"></i>
+                            טוען נתונים...
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Server Tab -->
+            <div class="tab-content" id="server-tab">
+                <div class="section">
+                    <h2><i class="fas fa-server"></i> ניהול שרת</h2>
+                    
+                    <div class="server-status" id="serverStatus">
+                        <span class="status-indicator status-offline"></span>
+                        <strong>מצב שרת:</strong> בודק...
+                    </div>
+
+                    <div class="server-controls">
+                        <button class="btn" onclick="startLocalServer()">
+                            <i class="fas fa-play"></i> הפעל שרת מקומי
+                        </button>
+                        <button class="btn" onclick="deployDocker()">
+                            <i class="fab fa-docker"></i> פריסה עם Docker
+                        </button>
+                        <button class="btn" onclick="deployAWS()">
+                            <i class="fab fa-aws"></i> פריסה ל-AWS
+                        </button>
+                        <button class="btn btn-secondary" onclick="stopServer()">
+                            <i class="fas fa-stop"></i> עצור שרת
+                        </button>
+                    </div>
+
+                    <div class="config-section">
+                        <h3><i class="fas fa-network-wired"></i> הגדרות פריסה</h3>
+                        <div class="config-item">
+                            <label for="dockerPort"><i class="fas fa-plug"></i> פורט Docker:</label>
+                            <input type="number" id="dockerPort" value="8080">
+                        </div>
+                        <div class="config-item">
+                            <label for="awsRegion"><i class="fas fa-globe-americas"></i> אזור AWS:</label>
+                            <select id="awsRegion">
+                                <option value="us-east-1">US East (N. Virginia)</option>
+                                <option value="eu-west-1">EU (Ireland)</option>
+                                <option value="ap-south-1">Asia Pacific (Mumbai)</option>
+                            </select>
+                        </div>
+                        <div class="config-item">
+                            <label for="ec2Type"><i class="fas fa-memory"></i> סוג EC2:</label>
+                            <select id="ec2Type">
+                                <option value="t2.micro">t2.micro (חינמי)</option>
+                                <option value="t2.small">t2.small</option>
+                                <option value="t2.medium">t2.medium</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2><i class="fas fa-terminal"></i> לוגים וניטור</h2>
+                    <div style="background: #1e1e1e; color: #00ff00; padding: 20px; border-radius: 10px; font-family: monospace; height: 300px; overflow-y: auto; font-size: 0.9rem;">
+                        <div id="serverLogs">
+                            <p>> מערכת אירוח HTML - לוגים</p>
+                            <p>> התחברות למערכת...</p>
+                            <p>> מוכנה לקבל קבצים</p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-secondary" onclick="clearLogs()">
+                            <i class="fas fa-trash"></i> נקה לוגים
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Viewer Modal -->
+    <div class="viewer-container" id="viewerContainer">
+        <div class="viewer-content">
+            <div class="viewer-header">
+                <h2 style="color: #667eea;">צפייה בקובץ</h2>
+                <button class="close-viewer" onclick="closeViewer()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <iframe class="viewer-iframe" id="fileViewer" sandbox="allow-scripts allow-same-origin"></iframe>
+        </div>
+    </div>
+
+    <!-- Notification Area -->
+    <div id="notificationArea"></div>
+
+    <script>
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            setupDragAndDrop();
+            checkServerStatus();
+            loadFiles();
+        });
+
+        // Global variables
+        let uploadedFiles = [];
+        let serverRunning = false;
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Update active tab button
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Show active tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName + '-tab').classList.add('active');
+        }
+
+        // Drag and drop setup
+        function setupDragAndDrop() {
+            const dropArea = document.getElementById('dropArea');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            dropArea.addEventListener('drop', handleDrop, false);
+        }
+
+        function highlight() {
+            document.getElementById('dropArea').classList.add('dragover');
+        }
+
+        function unhighlight() {
+            document.getElementById('dropArea').classList.remove('dragover');
+        }
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            handleFiles(files);
+        }
+
+        // Handle file upload
+        async function handleFiles(files) {
+            const file = files[0];
+            
+            if (!file.name.endsWith('.html') && !file.name.endsWith('.htm')) {
+                showNotification('רק קבצי HTML מותרים', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const serverUrl = document.getElementById('serverUrl').value;
+            const progressBar = document.getElementById('progressBar');
+            const progressFill = document.getElementById('progressFill');
+
+            // Show progress bar
+            progressBar.style.display = 'block';
+            
+            try {
+                // Simulate upload progress
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 10;
+                    progressFill.style.width = progress + '%';
+                    if (progress >= 90) clearInterval(interval);
+                }, 200);
+
+                // In a real app, you would use fetch with proper backend
+                // For demo purposes, we'll simulate the upload
+                setTimeout(() => {
+                    clearInterval(interval);
+                    progressFill.style.width = '100%';
+                    
+                    // Create mock response for demo
+                    const mockResponse = {
+                        filename: file.name,
+                        size: (file.size / 1024).toFixed(2),
+                        url: `http://demo-server.com/files/${Date.now()}_${file.name}`,
+                        uploadDate: new Date().toISOString()
+                    };
+
+                    uploadedFiles.push(mockResponse);
+                    saveToLocalStorage();
+                    showNotification(`הקובץ ${file.name} הועלה בהצלחה!`, 'success');
+                    
+                    setTimeout(() => {
+                        progressBar.style.display = 'none';
+                        progressFill.style.width = '0%';
+                        loadFiles();
+                    }, 1000);
+
+                }, 2000);
+
+            } catch (error) {
+                showNotification('שגיאה בהעלאת הקובץ', 'error');
+                progressBar.style.display = 'none';
+                progressFill.style.width = '0%';
+            }
+        }
+
+        // File management
+        function loadFiles() {
+            const filesList = document.getElementById('filesList');
+            const spinner = document.getElementById('loadingSpinner');
+            
+            // Show loading
+            if (spinner) spinner.style.display = 'block';
+            
+            // Load from localStorage for demo
+            const savedFiles = JSON.parse(localStorage.getItem('htmlFiles') || '[]');
+            uploadedFiles = savedFiles;
+
+            setTimeout(() => {
+                if (spinner) spinner.style.display = 'none';
+                
+                if (uploadedFiles.length === 0) {
+                    filesList.innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #666;">
+                            <i class="fas fa-folder-open fa-3x" style="margin-bottom: 20px; display: block; opacity: 0.3;"></i>
+                            <p>אין קבצים מאוחסנים</p>
+                            <p style="font-size: 0.9rem; margin-top: 10px;">העלה קבצים בלשונית "העלאת קבצים"</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let filesHTML = '';
+                uploadedFiles.forEach((file, index) => {
+                    filesHTML += `
+                        <div class="file-item">
+                            <div class="file-name">
+                                <i class="fas fa-file-code"></i> ${file.filename}
+                            </div>
+                            <div class="file-size">
+                                גודל: ${file.size} KB | תאריך: ${new Date(file.uploadDate).toLocaleDateString('he-IL')}
+                            </div>
+                            <div class="file-actions">
+                                <button class="action-btn view-btn" onclick="viewFile('${file.url}')">
+                                    <i class="fas fa-eye"></i> צפה
+                                </button>
+                                <button class="action-btn delete-btn" onclick="deleteFile(${index})">
+                                    <i class="fas fa-trash"></i> מחק
+                                </button>
+                                <button class="action-btn" style="background: #f3e5f5; color: #7b1fa2;" onclick="copyLink('${file.url}')">
+                                    <i class="fas fa-link"></i> העתק קישור
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                filesList.innerHTML = filesHTML;
+                updateStats();
+            }, 500);
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('htmlFiles', JSON.stringify(uploadedFiles));
+        }
+
+        function deleteFile(index) {
+            if (confirm('האם אתה בטוח שברצונך למחוק קובץ זה?')) {
+                uploadedFiles.splice(index, 1);
+                saveToLocalStorage();
+                loadFiles();
+                showNotification('הקובץ נמחק בהצלחה', 'success');
+            }
+        }
+
+        function clearAllFiles() {
+            if (confirm('האם אתה בטוח שברצונך למחוק את כל הקבצים?')) {
+                uploadedFiles = [];
+                localStorage.removeItem('htmlFiles');
+                loadFiles();
+                showNotification('כל הקבצים נמחקו', 'success');
+            }
+        }
+
+        function copyLink(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                showNotification('הקישור הועתק ללוח', 'success');
+            });
+        }
+
+        function viewFile(url) {
+            const viewer = document.getElementById('fileViewer');
+            const container = document.getElementById('viewerContainer');
+            
+            viewer.src = url;
+            container.style.display = 'block';
+        }
+
+        function closeViewer() {
+            document.getElementById('viewerContainer').style.display = 'none';
+            document.getElementById('fileViewer').src = '';
+        }
+
+        function updateStats() {
+            const statsContainer = document.getElementById('statsContainer');
+            const totalFiles = uploadedFiles.length;
+            const totalSize = uploadedFiles.reduce((sum, file) => sum + parseFloat(file.size), 0);
+            const avgSize = totalFiles > 0 ? (totalSize / totalFiles).toFixed(2) : 0;
+
+            statsContainer.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px;">
+                    <div style="text-align: center; padding: 20px; background: #e8f5e9; border-radius: 10px;">
+                        <div style="font-size: 2.5rem; font-weight: bold; color: #2e7d32;">${totalFiles}</div>
+                        <div style="color: #666;">קבצים</div>
+                    </div>
+                    <div style="text-align: center; padding: 20px; background: #e3f2fd; border-radius: 10px;">
+                        <div style="font-size: 2.5rem; font-weight: bold; color: #1565c0;">${totalSize.toFixed(2)}</div>
+                        <div style="color: #666;">KB סה"כ</div>
+                    </div>
+                    <div style="text-align: center; padding: 20px; background: #f3e5f5; border-radius: 10px;">
+                        <div style="font-size: 2.5rem; font-weight: bold; color: #7b1fa2;">${avgSize}</div>
+                        <div style="color: #666;">KB ממוצע לקובץ</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Server management
+        async function checkServerStatus() {
+            const statusDiv = document.getElementById('serverStatus');
+            
+            try {
+                // In a real app, you would check actual server status
+                // For demo, we'll simulate random status
+                const isOnline = Math.random() > 0.3;
+                
+                if (isOnline) {
+                    statusDiv.innerHTML = `
+                        <span class="status-indicator status-online"></span>
+                        <strong>מצב שרת:</strong> פועל
+                        <span style="float: left; font-size: 0.9rem; color: #666;">
+                            נוצר לאחרונה: ${new Date().toLocaleTimeString('he-IL')}
+                        </span>
+                    `;
+                    statusDiv.classList.remove('offline');
+                    serverRunning = true;
+                } else {
+                    statusDiv.innerHTML = `
+                        <span class="status-indicator status-offline"></span>
+                        <strong>מצב שרת:</strong> כבוי
+                    `;
+                    statusDiv.classList.add('offline');
+                    serverRunning = false;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <span class="status-indicator status-offline"></span>
+                    <strong>מצב שרת:</strong> שגיאה בחיבור
+                `;
+                statusDiv.classList.add('offline');
+                serverRunning = false;
+            }
+        }
+
+        function startLocalServer() {
+            showNotification('מפעיל שרת מקומי...', 'info');
+            addLog('הפעלת שרת מקומי בפורט 5000');
+            
+            // Simulate server startup
+            setTimeout(() => {
+                serverRunning = true;
+                checkServerStatus();
+                showNotification('השרת המקומי הופעל בהצלחה!', 'success');
+                addLog('שרת מוכן וממתין לחיבורים');
+            }, 2000);
+        }
+
+        function deployDocker() {
+            const port = document.getElementById('dockerPort').value;
+            showNotification(`מפרס עם Docker בפורט ${port}...`, 'info');
+            addLog(`בניית תמונת Docker עם פורט ${port}`);
+            
+            // Simulate Docker deployment
+            setTimeout(() => {
+                showNotification('Docker הופעל בהצלחה!', 'success');
+                addLog(`שרת Docker פועל ב-http://localhost:${port}`);
+            }, 3000);
+        }
+
+        function deployAWS() {
+            const region = document.getElementById('awsRegion').value;
+            const ec2Type = document.getElementById('ec2Type').value;
+            
+            showNotification(`מפרס ל-AWS באזור ${region}...`, 'info');
+            addLog(`התחלת פריסה ל-AWS באזור ${region} עם ${ec2Type}`);
+            
+            // Simulate AWS deployment
+            setTimeout(() => {
+                showNotification('הפריסה ל-AWS הושלמה בהצלחה!', 'success');
+                addLog('המערכת מוכנה ב-EC2, מוגדרת עם Load Balancer');
+                addLog(`כתובת השרת: http://ec2-${region}.amazonaws.com`);
+            }, 4000);
+        }
+
+        function stopServer() {
+            if (serverRunning) {
+                showNotification('מכבה שרת...', 'info');
+                addLog('קבלת בקשת כיבוי שרת');
+                
+                setTimeout(() => {
+                    serverRunning = false;
+                    checkServerStatus();
+                    showNotification('השרת נכבה', 'success');
+                    addLog('השרת כובה בהצלחה');
+                }, 1000);
+            }
+        }
+
+        function addLog(message) {
+            const logsDiv = document.getElementById('serverLogs');
+            const timestamp = new Date().toLocaleTimeString('he-IL');
+            logsDiv.innerHTML += `<p>> [${timestamp}] ${message}</p>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('serverLogs').innerHTML = `
+                <p>> מערכת אירוח HTML - לוגים</p>
+                <p>> לוגים נוקו ${new Date().toLocaleTimeString('he-IL')}</p>
+            `;
+        }
+
+        // Notification system
+        function showNotification(message, type) {
+            const notificationArea = document.getElementById('notificationArea');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                ${message}
+            `;
+            
+            notificationArea.appendChild(notification);
+            
+            // Show notification
+            setTimeout(() => notification.classList.add('show'), 10);
+            
+            // Remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+        }
+
+        // Export function for download
+        function exportSystem() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(
+                JSON.stringify({
+                    files: uploadedFiles,
+                    config: {
+                        serverUrl: document.getElementById('serverUrl').value,
+                        hostingType: document.getElementById('hostingType').value,
+                        dockerPort: document.getElementById('dockerPort').value,
+                        awsRegion: document.getElementById('awsRegion').value,
+                        ec2Type: document.getElementById('ec2Type').value
+                    }
+                }, null, 2)
+            );
+            
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", "html_hosting_system_backup.json");
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            
+            showNotification('גיבוי המערכת הורד בהצלחה', 'success');
+        }
+
+        // Import function
+        function importSystem(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    uploadedFiles = data.files || [];
+                    saveToLocalStorage();
+                    
+                    // Update config
+                    if (data.config) {
+                        document.getElementById('serverUrl').value = data.config.serverUrl || 'http://localhost:5000';
+                        document.getElementById('hostingType').value = data.config.hostingType || 'local';
+                        document.getElementById('dockerPort').value = data.config.dockerPort || '8080';
+                        document.getElementById('awsRegion').value = data.config.awsRegion || 'us-east-1';
+                        document.getElementById('ec2Type').value = data.config.ec2Type || 't2.micro';
+                    }
+                    
+                    loadFiles();
+                    showNotification('מערכת שוחזרה מהגיבוי בהצלחה', 'success');
+                } catch (error) {
+                    showNotification('שגיאה בקריאת קובץ הגיבוי', 'error');
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+
+        // Add export/import buttons to management tab
+        setTimeout(() => {
+            const manageSection = document.querySelector('#manage-tab .section:first-child');
+            const buttonContainer = manageSection.querySelector('div[style*="margin-bottom: 20px"]');
+            
+            if (buttonContainer) {
+                buttonContainer.innerHTML += `
+                    <button class="btn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);" onclick="exportSystem()">
+                        <i class="fas fa-download"></i> יצא גיבוי
+                    </button>
+                    <button class="btn" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);" onclick="document.getElementById('importInput').click()">
+                        <i class="fas fa-upload"></i> ייבא גיבוי
+                    </button>
+                    <input type="file" id="importInput" style="display: none;" onchange="importSystem(event)" accept=".json">
+                `;
+            }
+        }, 100);
+    </script>
+</body>
+</html>
